@@ -1,0 +1,60 @@
+import re
+import plotly as py
+import plotly.graph_objs as go
+def get_date(line):
+    result = re.split(r',', line, maxsplit=1)
+    date = re.findall(r'\d{1,2}\.\d{1,2}\.\d{4}', result[0])
+    return date
+
+def get_company(line):
+    result = re.split(r',', line, maxsplit=2)
+    company = re.findall(r"\"*\w+\"* \"*\w+\"*", result[1])
+    return company
+
+def get_company_code(line):
+    result = re.split(r',', line, maxsplit=3)
+    company_code = re.findall(r"\d+", result[2])
+    return company_code
+
+def get_spend(line):
+    result = re.split(r",",line, maxsplit=8)
+    spend = re.findall(r"\d+\.?\d+", result[7])
+    if len(spend) == 0:
+        return ""
+    else:
+        return spend[0]
+line_number = 0
+try:
+
+    with open("../fuel_on_stations_12_12_2018 (1).csv", "r") as file:
+        first_dict = {}
+
+        for line in file:
+
+            for element in get_company(line):
+               if element in first_dict:
+
+                   first_dict[element].append(get_spend(line))
+               else:
+                   first_dict[element] = []
+
+                   first_dict[element].append(get_spend(line))
+            line_number += 1
+
+        for key in first_dict.keys():
+            for i in range(len(first_dict[key])):
+                first_dict[key][i] = float(first_dict[key][i])
+            first_dict[key] = sum(first_dict[key])
+        print(first_dict)
+        diagram = go.Bar(x = list(first_dict.keys()), y = list(first_dict.values()))
+        py.offline.plot([diagram], filename = "Витрати компаній.html")
+
+
+except IOError as e:
+    print("I/O error({0}): {1}".format(e.errno, e.strerror))
+
+except ValueError as ve:
+    print("Value error {0} in line {1}".format(ve, line_number))
+
+
+
